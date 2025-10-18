@@ -1,310 +1,154 @@
+/*
+ * Protogen Mask Control
+ * Main Program File
+ * Created by Arcnest, October 2025.
+ * Released into the public domain.
+ * This program is distributed in the hope that it will be useful,
+ *
+ * Used to control LED matrix mask with microphone input for mouth animation and timed eye blinking.
+ * Uses LedControl library for controlling the LED matrix.( noah1510/LedController@^1.7.0 )
+ * MatrixLayout class defines different eye and mouth layouts.
+ *
+ * Used hardware:
+ * - ESP32 microcontroller
+ * - 12 x MAX7219 LED 8x8 matrix driver
+ * - MAX9814 microphone amplifier module
+ *
+ *
+ * Setup connections:
+ * MAX7219:
+ * DIN  --> Pin 27 (ESP32)
+ * CLK  --> Pin 25 (ESP32)
+ * CS   --> Pin 26 (ESP32)
+ * GND  --> GND (ESP32)
+ * VCC  --> 5V (ESP32)
+ *
+ * MAX9814:
+ * Microphone OUT --> Pin 34 (ESP32 Analog Input)
+ * VCC           --> 3.3V (ESP32)
+ * GND           --> GND (ESP32)
+ */
+
 #include <Arduino.h>
 
-// // put function declarations here:
-// int myFunction(int, int);
-
-// void setup()
-// {
-//   // put your setup code here, to run once:
-//   int result = myFunction(2, 3);
-// }
-
-// void loop()
-// {
-//   // put your main code here, to run repeatedly:
-// }
-
-// // put function definitions here:
-// int myFunction(int x, int y)
-// {
-//   return x + y;
-// }
-
 #include "LedController.hpp"
+#include "MatrixLayout.h"
+
+#define ANALOG_PIN_MIC 34
 
 #define DIN 27
 #define CS 26
 #define CLK 25
 
-#define Segments 4
+#define Segments 12
 
-#define delayTime 1000 // Delay between Frames
+#define delayTime 100 // Delay between Frames
 
 LedController lc = LedController();
+MatrixLayout ml = MatrixLayout();
 
-ByteBlock rocket = {
-    B00000000,
-    B00001111,
-    B00111110,
-    B11111101,
-    B00111110,
-    B00001111,
-    B00000000,
-    B00000000};
+// Microphone variables
+const int sampleWindow = 50;
+unsigned int sample;
+unsigned long sig = 0;
 
-ByteBlock rocketColumns;
+// Blink secondstart
+int blinkInterval = 2000; // milliseconds
 
-ByteBlock digits[10] = {
-    {B00000000,
-     B00011000,
-     B00100100,
-     B01000010,
-     B01000010,
-     B00100100,
-     B00011000,
-     B00000000},
-    {B00000000,
-     B00011100,
-     B00101100,
-     B01001100,
-     B00001100,
-     B00001100,
-     B00001100,
-     B00000000},
-    {B00000000,
-     B00111000,
-     B01101100,
-     B00011000,
-     B00110000,
-     B01100000,
-     B01111110,
-     B00000000},
-    {B00000000,
-     B00111100,
-     B01100110,
-     B00001100,
-     B00000110,
-     B01100110,
-     B00111100,
-     B00000000},
-    {B00000000,
-     B01100000,
-     B01100000,
-     B01101000,
-     B01111110,
-     B00001000,
-     B00001000,
-     B00000000},
-    {B00000000,
-     B01111110,
-     B01100000,
-     B01111000,
-     B00000110,
-     B01100110,
-     B00111100,
-     B00000000},
-    {B00000000,
-     B00001100,
-     B00111000,
-     B01100000,
-     B01111100,
-     B01100110,
-     B00111100,
-     B00000000},
-    {B00000000,
-     B01111110,
-     B00000110,
-     B00001100,
-     B00011000,
-     B00110000,
-     B01100000,
-     B00000000},
-    {B00000000,
-     B00111100,
-     B00100100,
-     B00011000,
-     B01100110,
-     B01000010,
-     B00111100,
-     B00000000},
-    {B00000000,
-     B00111100,
-     B01100110,
-     B00111110,
-     B00000110,
-     B00011100,
-     B00110000,
-     B00000000}};
-
-bool emptySegment[8][8] = {
-
-    // Segment 0
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 0, 0, 0},
-
-};
-
-bool eyesDefault[2][8][8] = {
-
-    // Segment 0
+// Update LED Matrix from layoutMatrix
+void updateLED()
+{
+    for (int i = 0; i < 12; i++)
     {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {1, 1, 1, 0, 0, 0, 0, 0},
-        {1, 1, 1, 1, 1, 0, 0, 0},
-        {0, 0, 0, 1, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    },
-    // Segment 1
-    {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {1, 1, 1, 1, 1, 0, 0, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    }};
+        for (int j = 0; j < 8; j++)
+        {
+            for (int k = 0; k < 8; k++)
+            {
+                lc.setLed(i, j, k, ml.layoutMatrix[i][j][k]);
+            }
+        }
+    }
+}
 
-// TODO invert/arange segments new
-bool mouth[4][8][8] = {
+// Microphone sound level measurement
+unsigned long meassureSoundLevel()
+{
+    unsigned long startMillis = millis();
+    unsigned int peakToPeak = 0;
+    unsigned int signalMax = 0;
+    unsigned int signalMin = 3100;
 
-    // Segment 0
+    while (millis() - startMillis < sampleWindow) // sample for 50 milliseconds
     {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {1, 1, 1, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    },
-    // Segment 1
+        sample = analogRead(ANALOG_PIN_MIC);
+        if (sample < 3100)
+        {
+            if (sample > signalMax)
+            {
+                signalMax = sample;
+            }
+            else if (sample < signalMin)
+            {
+                signalMin = sample;
+            }
+        }
+    }
+    if (signalMax > signalMin) // avoid division by zero
     {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 1, 1, 1, 0, 0, 0},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    },
-    // Segment 2
-    {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0, 0, 0},
-        {0, 0, 1, 1, 1, 0, 0, 0},
-        {1, 1, 1, 0, 1, 1, 0, 0},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    },
-    // Segment 3
-    {
-        {1, 1, 1, 0, 0, 0, 0, 0},
-        {1, 1, 1, 0, 0, 0, 0, 0},
-        {1, 1, 1, 1, 1, 0, 0, 0},
-        {0, 0, 1, 1, 1, 1, 1, 0},
-        {0, 0, 0, 1, 1, 1, 1, 1},
-        {0, 0, 0, 0, 0, 0, 1, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    }};
+        return ((signalMax - signalMin) * 5.0) / 3100;
+    }
 
-bool mouthOpen[4][8][8] = {
-
-    // Segment 0
-    {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {1, 1, 1, 0, 0, 0, 0, 0},
-        {1, 1, 1, 1, 1, 0, 0, 0},
-        {0, 0, 0, 1, 1, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    },
-    // Segment 1
-    {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {1, 1, 1, 1, 1, 0, 0, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    },
-    // Segment 2
-    {
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 0, 0, 0, 0},
-        {1, 1, 1, 1, 1, 0, 0, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    },
-    // Segment 3
-    {
-        {1, 1, 1, 1, 1, 1, 0, 0},
-        {1, 1, 1, 1, 1, 1, 1, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {0, 0, 0, 1, 1, 1, 1, 1},
-        {0, 0, 0, 0, 0, 1, 1, 1},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 0, 0, 0, 0, 0},
-    }};
-
-bool *layoutMatrix[12];
+    return 0;
+}
 
 void setup()
 {
+    // TEST_SETUP
+    // Serial.begin(9600);
 
-  lc.init(DIN, CLK, CS, Segments); // Pins: DIN,CLK,CS, # of Display connected
-  lc.setIntensity(3);
-  lc.clearMatrix();
+    lc.init(DIN, CLK, CS, Segments); // Pins: DIN,CLK,CS, # of Display connected
+    lc.setIntensity(1);
+    lc.clearMatrix();
 
-  // Setup Layout
-
-  layoutMatrix[0] = &eyesDefault[0][0][0];
-  layoutMatrix[1] = &eyesDefault[1][0][0];
-  layoutMatrix[2] = &mouth[0][0][0];
-  layoutMatrix[3] = &mouth[1][0][0];
-  layoutMatrix[4] = &mouth[2][0][0];
-  layoutMatrix[5] = &mouth[3][0][0];
-  layoutMatrix[6] = &eyesDefault[0][0][0];
-  layoutMatrix[7] = &eyesDefault[1][0][0];
-  layoutMatrix[8] = &mouth[0][0][0];
-  layoutMatrix[9] = &mouth[1][0][0];
-  layoutMatrix[10] = &mouth[2][0][0];
-  layoutMatrix[11] = &mouth[3][0][0];
-
-  // for (int i = 0; i < 12; i++)// Segments
-  // {
-
-  // }
+    // Setup Layout
+    ml.init();
 }
 
 void loop()
 {
-  // lc.activateAllSegments();
-  // delay(delayTime);
-
-  for (int i = 0; i < 12; i++)
-  {
-    for (int j = 0; j < 8; j++)
+    // Eyes Animation
+    unsigned long currentMillis = millis();
+    if (currentMillis % blinkInterval < 500) // Blink every blinkInterval milliseconds
     {
-      for (int k = 0; k < 8; k++)
-      {
-        lc.setLed(i, j, k, layoutMatrix[i][j][k]);
-      }
+        blinkInterval = random(1500, 4000); // next blink between 1.5s and 4s
+        ml.eyesType(1);                     // Closed Eyes
     }
-  }
+    else
+    {
+        ml.eyesType(0); // open Eyes
+    }
 
-  delay(delayTime);
+    // Microphone
+    sig = meassureSoundLevel();
+
+    // Mouth Animation based on sound level
+    if (sig < 1.5)
+    {
+        ml.mouthType(0);
+    }
+    else if (sig >= 1.5 && sig < 3.5)
+    {
+        ml.mouthType(1);
+    }
+    else if (sig >= 3.5 && sig < 5.0)
+    {
+        ml.mouthType(2);
+    }
+    else
+    {
+        ml.mouthType(0);
+    }
+
+    updateLED();      // Update LED Matrix
+    delay(delayTime); // Delay between Frames
 }
