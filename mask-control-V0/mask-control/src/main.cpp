@@ -121,32 +121,32 @@ void loop()
     if (currentMillis % blinkInterval < 500) // Blink every blinkInterval milliseconds
     {
         blinkInterval = random(1500, 4000); // next blink between 1.5s and 4s
-        ml.eyesType(1);                     // Closed Eyes
+        ml.eyesType(EyeType::EYE_CLOSED);   // Closed Eyes
     }
     else
     {
-        ml.eyesType(0); // open Eyes
+        ml.eyesType(EyeType::EYE_OPEN); // open Eyes
     }
 
-    // Microphone
-    sig = meassureSoundLevel();
+    // Microphone input
+    sig = meassureSoundLevel(); // generates a delay of ~50ms to sample sound level
 
     // Mouth Animation based on sound level
     if (sig < 1.5)
     {
-        ml.mouthType(0);
+        ml.mouthType(MouthType::MOUTH_CLOSED);
     }
     else if (sig >= 1.5 && sig < 3.5)
     {
-        ml.mouthType(1);
+        ml.mouthType(MouthType::MOUTH_OPEN);
     }
     else if (sig >= 3.5 && sig < 5.0)
     {
-        ml.mouthType(2);
+        ml.mouthType(MouthType::MOUTH_WIDE_OPEN);
     }
     else
     {
-        ml.mouthType(0);
+        ml.mouthType(MouthType::MOUTH_CLOSED);
     }
 
     updateLED();      // Update LED Matrix

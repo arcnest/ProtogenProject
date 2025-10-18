@@ -7,6 +7,20 @@
 #define START_MOUTH_RIGHT 8
 #define SEGMENTS_END_POS 7
 
+enum EyeType
+{
+    EYE_OPEN = 0,
+    EYE_CLOSED = 1,
+    EYE_HEART = 2
+};
+
+enum MouthType
+{
+    MOUTH_CLOSED = 0,
+    MOUTH_OPEN = 1,
+    MOUTH_WIDE_OPEN = 2
+};
+
 bool emptySegment[8][8] = {
 
     // Segment 0
@@ -72,6 +86,7 @@ bool eyes[3][2][8][8] = {
             {0, 0, 1, 1, 0, 0, 0, 0},
             {0, 0, 0, 0, 0, 0, 0, 0},
         }},
+
     // Eye Type 2 Heart Eyes
     {
         // Segment 0
@@ -241,125 +256,6 @@ bool mouth[3][4][8][8] = {
             {0, 0, 0, 0, 0, 0, 0, 0},
         }}};
 
-// bool eyesDefault[2][8][8] = {
-
-//     // Segment 0
-//     {
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {1, 1, 1, 0, 0, 0, 0, 0},
-//         {1, 1, 1, 1, 1, 0, 0, 0},
-//         {0, 0, 0, 1, 1, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     },
-//     // Segment 1
-//     {
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 1, 1, 1},
-//         {0, 0, 0, 1, 1, 1, 1, 1},
-//         {0, 0, 0, 1, 1, 1, 0, 0},
-//         {0, 0, 1, 1, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     }};
-
-// bool mouthOpen[4][8][8] = {
-
-//     // Segment 0
-//     {
-//         {0, 0, 0, 0, 1, 1, 1, 1},
-//         {0, 0, 0, 1, 1, 1, 1, 1},
-//         {0, 1, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 1, 1, 1, 0, 0},
-//         {1, 1, 1, 1, 1, 0, 0, 0},
-//         {1, 1, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     },
-//     // Segment 1
-//     {
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 1, 0, 0, 0},
-//         {0, 0, 0, 1, 1, 1, 0, 0},
-//         {0, 0, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 1, 0, 1, 1, 1},
-//         {1, 1, 1, 0, 0, 0, 1, 1},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     },
-//     // Segment 2
-//     {
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 1, 1, 1, 0, 0},
-//         {1, 1, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 0, 0, 0, 1, 1},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     },
-//     // Segment 3
-//     {
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 1, 1, 1},
-//         {0, 0, 0, 1, 1, 1, 1, 1},
-//         {0, 0, 0, 1, 1, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     }};
-
-// bool mouthOpenWide[4][8][8] = {
-
-//     // Segment 0
-//     {
-//         {0, 0, 0, 0, 1, 1, 1, 1},
-//         {0, 0, 0, 1, 1, 1, 1, 1},
-//         {0, 1, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 1, 1, 1, 0, 0},
-//         {1, 1, 1, 1, 1, 0, 0, 0},
-//         {1, 1, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     },
-//     // Segment 1
-//     {
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 1, 0, 0, 0},
-//         {0, 0, 0, 1, 1, 1, 0, 0},
-//         {0, 0, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 1, 0, 1, 1, 1},
-//         {1, 1, 1, 0, 0, 0, 1, 1},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     },
-//     // Segment 2
-//     {
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 1, 1, 1, 0, 0},
-//         {1, 1, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 1, 1, 1, 1, 1},
-//         {1, 1, 1, 0, 0, 0, 1, 1},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     },
-//     // Segment 3
-//     {
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 1, 1, 1},
-//         {0, 1, 1, 1, 1, 1, 1, 1},
-//         {0, 1, 1, 1, 1, 1, 1, 1},
-//         {0, 1, 1, 1, 1, 0, 0, 0},
-//         {0, 0, 0, 0, 0, 0, 0, 0},
-//     }};
-
 class MatrixLayout
 {
 private:
@@ -369,8 +265,8 @@ public:
     ~MatrixLayout();
     bool layoutMatrix[12][8][8];
     void init();
-    void mouthType(int type);
-    void eyesType(int type);
+    void mouthType(MouthType type);
+    void eyesType(EyeType type);
 };
 
 MatrixLayout::MatrixLayout(/* args */)
@@ -383,11 +279,11 @@ MatrixLayout::~MatrixLayout()
 
 void MatrixLayout::init()
 {
-    eyesType(0);
-    mouthType(0);
+    eyesType(EYE_OPEN);
+    mouthType(MOUTH_CLOSED);
 }
 
-void MatrixLayout::eyesType(int type)
+void MatrixLayout::eyesType(EyeType type)
 {
     int segmentPos = 0;
 
@@ -402,6 +298,7 @@ void MatrixLayout::eyesType(int type)
             }
         }
     }
+
     segmentPos = START_EYE_RIGHT;
     for (int i = 0; i < 2; i++)
     {
@@ -413,41 +310,9 @@ void MatrixLayout::eyesType(int type)
             }
         }
     }
-
-    // switch (type)
-    // {
-    // case 0:
-    //     segmentPos = START_EYE_LEFT;
-    //     for (int i = 0; i < 2; i++)
-    //     {
-    //         for (int j = 0; j < 8; j++)
-    //         {
-    //             for (int k = 0; k < 8; k++)
-    //             {
-    //                 layoutMatrix[segmentPos + i][j][k] = eyesDefault[i][j][k];
-    //             }
-    //         }
-    //     }
-    //     segmentPos = START_EYE_RIGHT;
-    //     for (int i = 0; i < 2; i++)
-    //     {
-    //         for (int j = 0; j < 8; j++)
-    //         {
-    //             for (int k = 0; k < 8; k++)
-    //             {
-    //                 layoutMatrix[segmentPos + i][SEGMENTS_END_POS - j][k] = eyesDefault[i][j][k];
-    //             }
-    //         }
-    //     }
-    //     break;
-    //     // TODO add more eye types
-    // default:
-    //     // TODO error handling
-    //     break;
-    // }
 }
 
-void MatrixLayout::mouthType(int type)
+void MatrixLayout::mouthType(MouthType type)
 {
     int segmentPos = 0;
 
@@ -462,6 +327,7 @@ void MatrixLayout::mouthType(int type)
             }
         }
     }
+
     segmentPos = START_MOUTH_RIGHT;
     for (int i = 0; i < 4; i++)
     {
@@ -473,86 +339,6 @@ void MatrixLayout::mouthType(int type)
             }
         }
     }
-
-    // switch (type)
-    // {
-    // case 0:
-    //     segmentPos = START_MOUTH_LEFT;
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         for (int j = 0; j < 8; j++)
-    //         {
-    //             for (int k = 0; k < 8; k++)
-    //             {
-    //                 layoutMatrix[segmentPos + i][j][k] = mouth[i][j][k];
-    //             }
-    //         }
-    //     }
-    //     segmentPos = START_MOUTH_RIGHT;
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         for (int j = 0; j < 8; j++)
-    //         {
-    //             for (int k = 0; k < 8; k++)
-    //             {
-    //                 layoutMatrix[segmentPos + i][SEGMENTS_END_POS - j][k] = mouth[i][j][k];
-    //             }
-    //         }
-    //     }
-    //     break;
-    // case 1:
-    //     segmentPos = START_MOUTH_LEFT;
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         for (int j = 0; j < 8; j++)
-    //         {
-    //             for (int k = 0; k < 8; k++)
-    //             {
-    //                 layoutMatrix[segmentPos + i][j][k] = mouthOpen[i][j][k];
-    //             }
-    //         }
-    //     }
-    //     segmentPos = START_MOUTH_RIGHT;
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         for (int j = 0; j < 8; j++)
-    //         {
-    //             for (int k = 0; k < 8; k++)
-    //             {
-    //                 layoutMatrix[segmentPos + i][SEGMENTS_END_POS - j][k] = mouthOpen[i][j][k];
-    //             }
-    //         }
-    //     }
-    //     break;
-    // case 2:
-    //     segmentPos = START_MOUTH_LEFT;
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         for (int j = 0; j < 8; j++)
-    //         {
-    //             for (int k = 0; k < 8; k++)
-    //             {
-    //                 layoutMatrix[segmentPos + i][j][k] = mouthOpenWide[i][j][k];
-    //             }
-    //         }
-    //     }
-    //     segmentPos = START_MOUTH_RIGHT;
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         for (int j = 0; j < 8; j++)
-    //         {
-    //             for (int k = 0; k < 8; k++)
-    //             {
-    //                 layoutMatrix[segmentPos + i][SEGMENTS_END_POS - j][k] = mouthOpenWide[i][j][k];
-    //             }
-    //         }
-    //     }
-    //     break;
-    //     // TODO add more mouth types
-    // default:
-    //     // TODO error handling
-    //     break;
-    // }
 }
 
 #endif // MATRIXLAYOUT_H
