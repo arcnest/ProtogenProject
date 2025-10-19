@@ -20,22 +20,26 @@
  * DIN  --> Pin 27 (ESP32)
  * CLK  --> Pin 25 (ESP32)
  * CS   --> Pin 26 (ESP32)
- * GND  --> GND (ESP32)
- * VCC  --> 5V (ESP32)
+ * GND  --> GND
+ * VCC  --> 5V
  *
  * MAX9814:
  * Microphone OUT --> Pin 34 (ESP32 Analog Input)
  * VCC           --> 3.3V (ESP32)
  * GND           --> GND (ESP32)
  *
+ * Button for Mode Switch:
+ * GPIO12 with internal pull-up resistor enabled
  *
- * >--+
+ * Fan State Detection Circuit:
+ * Voltage at GPIO14 is given by the voltage divider:
+ * >--+ 5V Power Supply for Fan Circuit --+
  *  |
  * | |
  * | | R1
  * | |
  *  |
- *  +------GPIO12 (Fan Check Pin)
+ *  +------GPIO14 (Fan Check Pin)
  *  |
  * | |
  * | | R2
@@ -43,12 +47,10 @@
  *  |
  * GND+-----GND
  *
- * R1 = 100k Ohm
- * R2 = 33k Ohm
+ * R1 = 660 Ohm
+ * R2 = 1k Ohm
  *
  *
- * Voltage at A0 (GPIO12) is given by the voltage divider formula:
- * UA0 = Uin · (R2 / (R1 + R2))
  */
 
 #include <Arduino.h>
