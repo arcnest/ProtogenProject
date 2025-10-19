@@ -20,8 +20,8 @@ MAX7219:
 - DIN  --> Pin 27 (ESP32)
 - CLK  --> Pin 25 (ESP32)
 - CS   --> Pin 26 (ESP32)
-- GND  --> GND (ESP32)
-- VCC  --> 5V (ESP32)
+- GND  --> GND 
+- VCC  --> 5V 
 
 MAX9814:
 - Microphone OUT --> Pin 34 (ESP32 Analog Input)
