@@ -27,14 +27,42 @@
  * Microphone OUT --> Pin 34 (ESP32 Analog Input)
  * VCC           --> 3.3V (ESP32)
  * GND           --> GND (ESP32)
+ *
+ *
+ * >--+
+ *  |
+ * | |
+ * | | R1
+ * | |
+ *  |
+ *  +------GPIO12 (Fan Check Pin)
+ *  |
+ * | |
+ * | | R2
+ * | |
+ *  |
+ * GND+-----GND
+ *
+ * R1 = 100k Ohm
+ * R2 = 33k Ohm
+ *
+ *
+ * Voltage at A0 (GPIO12) is given by the voltage divider formula:
+ * UA0 = Uin · (R2 / (R1 + R2))
  */
 
 #include <Arduino.h>
 
+// NO_LCD // #include "LiquidCrystal_I2C.h"
 #include "LedController.hpp"
 #include "MatrixLayout.h"
 
 #define ANALOG_PIN_MIC 34
+#define FAN_CHECK_PIN 14 // Pin to check fans state
+#define BUTTON_PIN 12    // Pin for mode switch button
+
+#define LCD_SDA 21
+#define LCD_SCL 22
 
 #define DIN 27
 #define CS 26
@@ -46,6 +74,7 @@
 
 LedController lc = LedController();
 MatrixLayout ml = MatrixLayout();
+// NO_LCD // LiquidCrystal_I2C lcd(0x27, 16, 2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 // Microphone variables
 const int sampleWindow = 50;
@@ -54,6 +83,10 @@ unsigned long sig = 0;
 
 // Blink secondstart
 int blinkInterval = 2000; // milliseconds
+int mode = 0;             // Animation mode
+int fanState = 0;         // Fan state
+int buttonState = 0;      // Button state
+int lastButtonState = 0;  // Last button state
 
 // Update LED Matrix from layoutMatrix
 void updateLED()
@@ -103,15 +136,35 @@ unsigned long meassureSoundLevel()
 
 void setup()
 {
-    // TEST_SETUP
-    // Serial.begin(9600);
-
+    // init LED Matrix
     lc.init(DIN, CLK, CS, Segments); // Pins: DIN,CLK,CS, # of Display connected
     lc.setIntensity(1);
     lc.clearMatrix();
 
-    // Setup Layout
+    // Setup LED Layout
     ml.init();
+
+    // init Button
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    // init Fan Check Pin
+    pinMode(FAN_CHECK_PIN, INPUT);
+
+    // NO_LCD //
+    // // init LCD
+    // lcd.init(LCD_SDA, LCD_SCL);
+    // lcd.backlight();
+    // lcd.clear();
+    // lcd.setCursor(0, 0);
+    // lcd.print("Protogen init");
+    // lcd.setCursor(0, 1);
+    // lcd.print("Time is now!");
+    // delay(2000);
+    // lcd.clear();
+    // lcd.setCursor(0, 0);
+    // lcd.print("Protogen online");
+    // lcd.setCursor(0, 1);
+    // lcd.print("Mode: Normal");
 }
 
 void loop()
@@ -131,22 +184,69 @@ void loop()
     // Microphone input
     sig = meassureSoundLevel(); // generates a delay of ~50ms to sample sound level
 
-    // Mouth Animation based on sound level
-    if (sig < 1.5)
+    // Mode Switch Button
+    buttonState = digitalRead(BUTTON_PIN);
+    if (buttonState == HIGH && lastButtonState == LOW)
     {
+        mode = (mode + 1) % 4; // Cycle through modes 0, 1, 2, 3
+        lastButtonState = buttonState;
+    }
+
+    fanState = digitalRead(FAN_CHECK_PIN); // Read fan state
+
+    // Mouth Animation based on mode
+    switch (mode)
+    {
+    case 0:            // Normal Mode
+        if (!fanState) // only animate if fans are off
+        {
+
+            // NO_LCD // lcd.setCursor(0, 1);
+            // NO_LCD // lcd.print("Mode: Normal");
+            // Mouth Animation based on sound level
+            if (sig < 1.5)
+            {
+                ml.mouthType(MouthType::MOUTH_CLOSED);
+            }
+            else if (sig >= 1.5 && sig < 3.5)
+            {
+                ml.mouthType(MouthType::MOUTH_OPEN);
+            }
+            else if (sig >= 3.5 && sig < 5.0)
+            {
+                ml.mouthType(MouthType::MOUTH_WIDE_OPEN);
+            }
+            else
+            {
+                ml.mouthType(MouthType::MOUTH_CLOSED);
+            }
+            break;
+        }
+
+    case 1: // static and/ or fans active
+        // NO_LCD // lcd.setCursor(0, 1);
+        // NO_LCD // lcd.print("Mode: Static ");
+        ml.eyesType(EyeType::EYE_OPEN);
         ml.mouthType(MouthType::MOUTH_CLOSED);
-    }
-    else if (sig >= 1.5 && sig < 3.5)
-    {
-        ml.mouthType(MouthType::MOUTH_OPEN);
-    }
-    else if (sig >= 3.5 && sig < 5.0)
-    {
-        ml.mouthType(MouthType::MOUTH_WIDE_OPEN);
-    }
-    else
-    {
+        break;
+    case 2: // Sleeping
+        // NO_LCD // lcd.setCursor(0, 1);
+        // NO_LCD // lcd.print("Mode: Sleeping");
+        ml.eyesType(EyeType::EYE_X);
+        ml.mouthType(MouthType::MOUTH_SLEEPING);
+        break;
+    case 3: // Heart Eyes
+        // NO_LCD // lcd.setCursor(0, 0);
+        // NO_LCD // lcd.print("Mode: Love");
+        ml.eyesType(EyeType::EYE_HEART);
+        break;
+
+    default:
+        // NO_LCD // lcd.setCursor(0, 0);
+        // NO_LCD // lcd.print("Mode: Love");
+        ml.eyesType(EyeType::EYE_OPEN);
         ml.mouthType(MouthType::MOUTH_CLOSED);
+        break;
     }
 
     updateLED();      // Update LED Matrix
